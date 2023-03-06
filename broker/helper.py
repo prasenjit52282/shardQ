@@ -142,4 +142,5 @@ class SQLHandler:
 def env_config():
     config={}
     config['persist']=True if os.environ['PERSIST']=='yes' else False
+    config['broker_id']=os.environ['BID']
     return config

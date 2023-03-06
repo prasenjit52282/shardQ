@@ -41,6 +41,7 @@ class ApiHandler:
     def reg_producer(self,topic):
         self.raiseExceptionOnProhabitedTopic(topic)
         res=requests.post(self.url+'/producer/register',json={'topic':topic})
+        self.raiseExceptionOnFailure(res)
         return self.decodeResponse(res,'producer_id')
         
     def produce(self,topic,producer_id,message):

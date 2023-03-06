@@ -4,7 +4,8 @@ from .topicq import TopicQueues
 from .helper import SQLHandler
 
 class Manager:
-    def __init__(self,is_SQL=False):
+    def __init__(self,is_SQL=False,broker_id=None):
+        self.broker_id=broker_id
         if is_SQL:
             self._setupSQL()
         else:
@@ -42,16 +43,28 @@ class Manager:
             sub_id=self.subs.add_subscriber()
             last_topic_idx=self.tq.topic_last_idx(topic_name)
             self.subs.reg_subcriber_with_topic(sub_id,topic_name,last_topic_idx)
-            return dict(status="success",consumer_id=sub_id), 200
+            return dict(status="success",consumer_id=self.broker_id+'.'+sub_id), 200
 
     def RegisterProducer(self,topic_name):
         if not self.tq.is_topic_exist(topic_name):
             self.tq.add_new_topic(topic_name)
         pub_id=self.pubs.add_publisher()
         self.pubs.reg_publisher_with_topic(pub_id,topic_name)
-        return dict(status="success",producer_id=pub_id), 200
+        return dict(status="success",producer_id=self.broker_id+'.'+pub_id), 200
 
-    def Enqueue(self,topic_name,pub_id,msg):
+    def validate_id(self,combined_id):
+        broker_part,identity_part=combined_id.split('.')
+        if broker_part!=self.broker_id:
+            raise Exception(f"broker part of the id does not match {broker_part}!={self.broker_id}")
+        else:
+            return identity_part
+
+    def Enqueue(self,topic_name,combined_pub_id,msg):
+        try:
+            pub_id=self.validate_id(combined_pub_id)
+        except Exception as e:
+            return dict(status="failure", message=str(e)), 400
+
         if not self.pubs.is_valid_id(pub_id):
             return dict(status="failure",message=f"Producer:{pub_id} does not exist"), 400
         if not self.tq.is_topic_exist(topic_name):
@@ -61,7 +74,12 @@ class Manager:
         self.tq.add_msg_for_topic(topic_name,msg)
         return dict(status="success"), 200
 
-    def Dequeue(self,topic_name,sub_id):
+    def Dequeue(self,topic_name,combined_sub_id):
+        try:
+            sub_id=self.validate_id(combined_sub_id)
+        except Exception as e:
+            return dict(status="failure", message=str(e)), 400
+
         if not self.subs.is_valid_id(sub_id):
             return dict(status="failure",message=f"Consumer:{sub_id} does not exist"), 400
         if not self.tq.is_topic_exist(topic_name):
@@ -76,7 +94,12 @@ class Manager:
         except KeyError:
             return dict(status="failure",message=f"Empty logs for Comsumer:{sub_id} for Topic:{topic_name}"), 400
 
-    def Size(self,topic_name,sub_id):
+    def Size(self,topic_name,combined_sub_id):
+        try:
+            sub_id=self.validate_id(combined_sub_id)
+        except Exception as e:
+            return dict(status="failure", message=str(e)), 400
+
         if not self.subs.is_valid_id(sub_id):
             return dict(status="failure",message=f"Consumer:{sub_id} does not exist"), 400
         if not self.tq.is_topic_exist(topic_name):

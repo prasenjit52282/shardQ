@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 config=env_config()
-mgr=Manager(config['persist'])
+mgr=Manager(config['persist'],config['broker_id'])
 
 @app.route("/topics",methods=["GET","POST"])
 def handle_topics():
