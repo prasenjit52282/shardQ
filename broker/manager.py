@@ -12,7 +12,7 @@ class Manager:
             self._setupInMEM()
 
     def _setupSQL(self):
-        self.sql_handler=SQLHandler(host='mysql',user='root',password='abc',db='dQdb')
+        self.sql_handler=SQLHandler(host='localhost',user='root',password='abc',db='dQdb')
         self.tq=TopicQueues(is_SQL=True,tablenames=self.sql_handler.jobrunner.apply(self.sql_handler.getTopicTables),SQL_handle=self.sql_handler)
         self.pubs=Publishers(is_SQL=True,tablename='publ',SQL_handle=self.sql_handler)
         self.subs=Subscribers(is_SQL=True,tablename='subl',SQL_handle=self.sql_handler)
