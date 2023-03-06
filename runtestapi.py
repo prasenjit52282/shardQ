@@ -92,6 +92,7 @@ run_test(produce,("secondtopic",pid),shoulderr=True)     #AsExpected: Producer:2
 
 run_test(get_size,(t1,cid,2))
 run_test(consume,(t1,'broker1@-1'),shoulderr=True)                 #AsExpected: Consumer:-1 does not exist
+run_test(consume,(t1,'broker2@-1'),shoulderr=True)                 #AsExpected:  broker part of the id does not match broker2!=broker1
 run_test(consume,("secondtopic",cid),shoulderr=True)     #AsExpected: Consumer:3 is not registered with Topic:secondtopic
 run_test(consume,(t1,cid))
 run_test(get_size,(t1,cid,1))
