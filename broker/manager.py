@@ -1,7 +1,7 @@
-from .publisher import Publishers
-from .subscriber import Subscribers
-from .topicq import TopicQueues
-from .helper import SQLHandler
+from publisher import Publishers
+from subscriber import Subscribers
+from topicq import TopicQueues
+from helper import SQLHandler
 
 class Manager:
     def __init__(self,is_SQL=False,broker_id=None):
@@ -43,21 +43,21 @@ class Manager:
             sub_id=self.subs.add_subscriber()
             last_topic_idx=self.tq.topic_last_idx(topic_name)
             self.subs.reg_subcriber_with_topic(sub_id,topic_name,last_topic_idx)
-            return dict(status="success",consumer_id=self.broker_id+'.'+sub_id), 200
+            return dict(status="success",consumer_id=self.broker_id+'@'+str(sub_id)), 200
 
     def RegisterProducer(self,topic_name):
         if not self.tq.is_topic_exist(topic_name):
             self.tq.add_new_topic(topic_name)
         pub_id=self.pubs.add_publisher()
         self.pubs.reg_publisher_with_topic(pub_id,topic_name)
-        return dict(status="success",producer_id=self.broker_id+'.'+pub_id), 200
+        return dict(status="success",producer_id=self.broker_id+'@'+str(pub_id)), 200
 
     def validate_id(self,combined_id):
-        broker_part,identity_part=combined_id.split('.')
+        broker_part,identity_part=combined_id.split('@')
         if broker_part!=self.broker_id:
             raise Exception(f"broker part of the id does not match {broker_part}!={self.broker_id}")
         else:
-            return identity_part
+            return int(identity_part)
 
     def Enqueue(self,topic_name,combined_pub_id,msg):
         try:

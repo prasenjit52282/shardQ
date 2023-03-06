@@ -1,5 +1,5 @@
 import numpy as np
-from .helper import DataHandler
+from helper import DataHandler
 
 class Subscribers:
     def __init__(self,is_SQL=False,tablename=None,SQL_handle=None):

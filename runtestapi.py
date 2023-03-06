@@ -38,13 +38,13 @@ def create_topic(topic):
 
 def reg_consumer(t):
     id=myapi.reg_consumer(t)
-    assert type(id)==int,"RegisterConsumer"
+    assert type(id)==str,"RegisterConsumer"
     print("Pass: RegisterConsumer")
     return id
 
 def reg_producer(t):
     id=myapi.reg_producer(t)
-    assert type(id)==int,"RegisterProducer"
+    assert type(id)==str,"RegisterProducer"
     print("Pass: RegisterProducer")
     return id
 
@@ -85,13 +85,13 @@ pid=run_test(reg_producer,(t1,))
 run_test(produce,(t1,pid))
 run_test(produce,(t1,pid))
 run_test(produce,("anytopic",pid),shoulderr=True)        #AsExpected: Topic:anytopic does not exist
-run_test(produce,(t1,-1),shoulderr=True)                 #AsExpected: Producer:-1 does not exist
+run_test(produce,(t1,'broker1@-1'),shoulderr=True)                 #AsExpected: Producer:-1 does not exist
 run_test(produce,("secondtopic",pid),shoulderr=True)     #AsExpected: Producer:2 is not registered with Topic:secondtopic
 
 
 
 run_test(get_size,(t1,cid,2))
-run_test(consume,(t1,-1),shoulderr=True)                 #AsExpected: Consumer:-1 does not exist
+run_test(consume,(t1,'broker1@-1'),shoulderr=True)                 #AsExpected: Consumer:-1 does not exist
 run_test(consume,("secondtopic",cid),shoulderr=True)     #AsExpected: Consumer:3 is not registered with Topic:secondtopic
 run_test(consume,(t1,cid))
 run_test(get_size,(t1,cid,1))

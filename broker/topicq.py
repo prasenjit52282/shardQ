@@ -1,4 +1,4 @@
-from .helper import DataHandler
+from helper import DataHandler
 from threading import Semaphore
 
 class TopicQueues:
