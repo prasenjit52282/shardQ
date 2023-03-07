@@ -13,7 +13,7 @@ def add_broker():
     data=request.get_json()
     broker_name=data["broker_name"]
     try:
-        os.system(f'sudo docker run --name {broker_name} --network mynet --network-alias {broker_name} -e BID={broker_name} -e PERSIST=yes  -d broker:latest')
+        os.system(f'docker run --name {broker_name} --network mynet --network-alias {broker_name} -e BID={broker_name} -e PERSIST=yes  -d broker:latest')
         brokers.append(broker_name)
         return f"successfully added {broker_name}", 200
     except Exception as e:
