@@ -1,16 +1,17 @@
 import os
+from library import Brokers
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-brokers=['broker0']
+brokers=Brokers()
 persist=os.environ['PERSIST']
 
 @app.route("/brokers",methods=["GET"])
 def list_brokers():
-    return jsonify(brokers), 200
+    return jsonify(brokers.list), 200
 
 @app.route("/brokers/add/<broker_name>",methods=["GET"])
 def add_broker(broker_name):
@@ -18,13 +19,13 @@ def add_broker(broker_name):
     if len(res)==0:
         return f"Unable to add {broker_name} - check manager logs", 400
     else:
-        brokers.append(broker_name)
         return f"successfully added {broker_name}", 200
 
 @app.route("/brokers/rm/<broker_name>",methods=["GET"])
 def rm_brokers(broker_name):
     if broker_name=='all':
-        for b in brokers:
+        all_brokers=brokers.list
+        for b in all_brokers:
             os.system(f'sudo docker stop {b} && sudo docker rm {b}')
         return "Removed all brokers",200
     else:
@@ -42,8 +43,13 @@ def test_broker(broker_name):
     else:
         return res, 200
 
+@app.route("/topics",methods=["GET"])
+def get_topics():
+    return jsonify(brokers.lisTopics()),200
 
-
+@app.route("/topics/<topic_name>/<part>",methods=["GET"])
+def add_topic(topic_name,part):
+    return brokers.add_topic(topic_name,part)
 
 
 if __name__=='__main__':
