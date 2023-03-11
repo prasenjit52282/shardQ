@@ -1,5 +1,5 @@
 import os
-from library import Brokers
+from library import Brokers,Publishers,Subscribers
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -7,6 +7,9 @@ app = Flask(__name__)
 CORS(app)
 
 brokers=Brokers()
+publ=Publishers()
+subl=Subscribers()
+
 persist=os.environ['PERSIST']
 
 #--------------------- Handling Brokers ----------------------------------#
@@ -60,29 +63,40 @@ def producer_registration():
     topic_name=data["topic"]
     part= data["part"] if "part" in data else 'None'
     if part == 'None': return "No ready for part=None yet", 400
-    return brokers.producer_registration(topic_name,part)
+    return brokers.producer_registration(topic_name,part,publ)
 
+@app.route("/producer/produce",methods=["POST"])
+def handle_produce():
+    data=request.get_json()
+    pub_id=data["producer_id"]
+    msg=data["message"]
+    TxP,nhop_pub_id=publ.translate(pub_id)
+    bkr=nhop_pub_id.split('@')[0]
+    return brokers.produce(bkr,TxP,nhop_pub_id,msg)
 
+#---------------------------------- Handling Subscribers ----------------------------#
+@app.route("/consumer/register",methods=["POST"])
+def consumer_registration():
+    data=request.get_json()
+    topic_name=data["topic"]
+    part= data["part"] if "part" in data else 'None'
+    if part == 'None': return "No ready for part=None yet", 400
+    return brokers.consumer_registration(topic_name,part,subl)
 
+@app.route("/consumer/consume",methods=["GET"])
+def handle_consume():
+    sub_id=request.args.get("consumer_id")
+    TxP,nhop_sub_id=subl.translate(sub_id)
+    bkr=nhop_sub_id.split('@')[0]
+    return brokers.consume(bkr,TxP,nhop_sub_id)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#------------------------------------ Size -------------------------------------------#
+@app.route("/size",methods=["GET"])
+def get_size():
+    sub_id=request.args.get("consumer_id")
+    TxP,nhop_sub_id=subl.translate(sub_id)
+    bkr=nhop_sub_id.split('@')[0]
+    return brokers.get_size(bkr,TxP,nhop_sub_id)
 
 
 

@@ -1,0 +1,31 @@
+import numpy as np
+from .helper import DataHandler,SQLHandler
+
+class Subscribers:
+    def __init__(self):
+        self.is_SQL=True
+        self.sql_handle=SQLHandler(host='localhost',user='root',password='abc',db='dQdb')
+        self._setup("subl")
+
+    def _setup(self,tablename):
+        self.subl=self.get_init_sub_list(tablename)
+        
+    def get_init_sub_list(self,tablename):
+        return DataHandler(columns=['comb','ridx'],dtypes=["str","int"],is_SQL=self.is_SQL,SQL_handle=self.sql_handle,table_name=tablename)
+
+    def add_subscriber(self,combined_id):
+        sub_id=self.subl.Insert([combined_id,0])
+        return sub_id
+
+    def is_subscriber_reg_with_topic_part(self,sub_id,topic_name,part):
+        T,P=self.subl.GetAT(sub_id,"comb").split("@")[0].split("x")
+        return T==topic_name and P==part
+
+    def translate(self,sub_id):
+        combined_id=self.subl.GetAT(sub_id,"comb")
+        TxP=combined_id.split("@")[0]
+        nhop_sub_id='@'.join(combined_id.split('@')[1:])
+        return TxP,nhop_sub_id
+
+    def is_valid_id(self,sub_id):
+        return 0<=sub_id<self.subl.Count

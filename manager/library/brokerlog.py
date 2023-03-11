@@ -55,12 +55,50 @@ class Brokers:
         except Exception as e:
             return str(e),400
 
-    def producer_registration(self,T,P):
+    def producer_registration(self,T,P,publ):
         self.add_topic(T,P)
         bkr=self.topics[T][P]
         try:
             self.api.setbroker(bkr)
             prod_id=self.api.reg_producer(f"{T}x{P}")
-            return f"{T}x{P}@"+prod_id, 200
+            pub_id=publ.add_publisher(f"{T}x{P}@"+prod_id)
+            return pub_id, 200
+        except Exception as e:
+            return str(e),400
+
+    def produce(self,bkr,TxP,nhop_pub_id,msg):
+        try:
+            self.api.setbroker(bkr)
+            self.api.produce(TxP,nhop_pub_id,msg)
+            return "Success",200
+        except Exception as e:
+            return str(e),400
+
+    def consumer_registration(self,T,P,subl):
+        if not self.checkifTopicPartExist(T,P):
+            return f"{T}:{P} does not exist",400
+        bkr=self.topics[T][P]
+        try:
+            self.api.setbroker(bkr)
+            sob_id=self.api.reg_consumer(f"{T}x{P}")
+            sub_id=subl.add_subscriber(sob_id)
+            return sub_id, 200
+        except Exception as e:
+            return str(e),400
+
+
+    def consume(self,bkr,TxP,nhop_sub_id):
+        try:
+            self.api.setbroker(bkr)
+            res=self.api.consume(TxP,nhop_sub_id)
+            return res,200
+        except Exception as e:
+            return str(e),400
+
+    def get_size(bkr,TxP,nhop_sub_id):
+        try:
+            self.api.setbroker(bkr)
+            res=self.api.get_size(TxP,nhop_sub_id)
+            return res,200
         except Exception as e:
             return str(e),400
