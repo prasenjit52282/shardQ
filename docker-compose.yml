@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  manager:
+    build: ./manager
+    image: manager
+    container_name: manager
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    privileged: true
+    networks:
+      network1:
+        aliases:
+          - manager
+    environment:
+      PERSIST: ${PERSISTENCE_MODE}
+
+  broker:
+    build: ./broker
+    image: broker
+    container_name: broker0
+    networks:
+      network1:
+        aliases:
+          - broker0
+    environment:
+      PERSIST: ${PERSISTENCE_MODE}
+      BID: broker0
+
+networks:
+  network1:
+    name: mynet
