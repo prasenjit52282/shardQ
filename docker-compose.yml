@@ -13,6 +13,8 @@ services:
       network1:
         aliases:
           - manager
+    environment:
+      PERSIST: ${PERSISTENCE_MODE}
 
   broker:
     build: ./broker
@@ -22,6 +24,9 @@ services:
       network1:
         aliases:
           - broker0
+    environment:
+      PERSIST: ${PERSISTENCE_MODE}
+      BID: broker0
 
 networks:
   network1:

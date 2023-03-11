@@ -137,9 +137,3 @@ class SQLHandler:
     def Count(self,table_name):
         res=self.query(f"SELECT count(id) FROM {table_name}")
         return res[0][0]
-    
-
-def env_config():
-    config={}
-    config['persist']=True if os.environ['PERSIST']=='yes' else False
-    return config

@@ -1,12 +1,13 @@
 import random
 import argparse
-from myqueue import ApiHandler
+from api import ApiHandler
 
 parser=argparse.ArgumentParser(description='example: python test_api.py --broker 10.110.10.216:5000')
 parser.add_argument('--broker', type=str, help='broker address ip:port', required=True)
 args = parser.parse_args()
 
 myapi=ApiHandler(args.broker)
+broker_name=args.broker.split(":")[0]
 
 allpass=True
 
@@ -76,23 +77,25 @@ if 'secondtopic' not in myapi.get_topics():
 run_test(get_topics,(t1,))
 run_test(reg_consumer,("anytopic",),shoulderr=True)      #AsExpected: Topic:anytopic does not exist
 cid=run_test(reg_consumer,(t1,))
+print("CID:",cid)
 run_test(get_size,(t1,cid,0))
 run_test(consume,(t1,cid),shoulderr=True)                #AsExpected: Empty logs for Comsumer:{} for Topic:mytopic{}
 run_test(consume,("anytopic",cid),shoulderr=True)        #AsExpected: Topic:anytopic does not exist
 
 
 pid=run_test(reg_producer,(t1,))
+print("PID:",pid)
 run_test(produce,(t1,pid))
 run_test(produce,(t1,pid))
 run_test(produce,("anytopic",pid),shoulderr=True)        #AsExpected: Topic:anytopic does not exist
-run_test(produce,(t1,'broker1@-1'),shoulderr=True)                 #AsExpected: Producer:-1 does not exist
+run_test(produce,(t1,f'{broker_name}@-1'),shoulderr=True)                 #AsExpected: Producer:-1 does not exist
 run_test(produce,("secondtopic",pid),shoulderr=True)     #AsExpected: Producer:2 is not registered with Topic:secondtopic
 
 
 
 run_test(get_size,(t1,cid,2))
-run_test(consume,(t1,'broker1@-1'),shoulderr=True)                 #AsExpected: Consumer:-1 does not exist
-run_test(consume,(t1,'broker2@-1'),shoulderr=True)                 #AsExpected:  broker part of the id does not match broker2!=broker1
+run_test(consume,(t1,f'{broker_name}@-1'),shoulderr=True)                 #AsExpected: Consumer:-1 does not exist
+run_test(consume,(t1,'brokerX@-1'),shoulderr=True)                 #AsExpected:  broker part of the id does not match brokerX!={broker_name}
 run_test(consume,("secondtopic",cid),shoulderr=True)     #AsExpected: Consumer:3 is not registered with Topic:secondtopic
 run_test(consume,(t1,cid))
 run_test(get_size,(t1,cid,1))
