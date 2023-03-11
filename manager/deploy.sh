@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 /bkr/manager/manager.py &
+python3 /mgr/manager.py &

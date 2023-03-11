@@ -1,8 +1,8 @@
 FROM mysql:8.0-debian
 
-COPY ./manager/deploy.sh /always-initdb.d/
-COPY . /bkr
-WORKDIR /bkr
+COPY deploy.sh /always-initdb.d/
+COPY . /mgr
+WORKDIR /mgr
 
 RUN apt-get update
 RUN apt-get install -y python3
@@ -10,7 +10,7 @@ RUN apt-get install -y python3-pip
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-RUN chmod +x /bkr/manager/custom-entry.sh
+RUN chmod +x /mgr/custom-entry.sh
 
 RUN apt-get update
 RUN apt-get -y install sudo
@@ -35,5 +35,5 @@ ENV MYSQL_ROOT_PASSWORD="abc"
 
 EXPOSE 5000
 
-ENTRYPOINT ["/bkr/manager/custom-entry.sh"]
+ENTRYPOINT ["/mgr/custom-entry.sh"]
 CMD ["mysqld"]

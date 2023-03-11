@@ -1,6 +1,6 @@
 FROM mysql:8.0-debian
 
-COPY ./broker/deploy.sh /always-initdb.d/
+COPY deploy.sh /always-initdb.d/
 COPY . /bkr
 WORKDIR /bkr
 
@@ -10,11 +10,11 @@ RUN apt-get install -y python3-pip
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-RUN chmod +x /bkr/broker/custom-entry.sh
+RUN chmod +x /bkr/custom-entry.sh
 
 ENV MYSQL_ROOT_PASSWORD="abc"
 
 EXPOSE 5000
 
-ENTRYPOINT ["/bkr/broker/custom-entry.sh"]
+ENTRYPOINT ["/bkr/custom-entry.sh"]
 CMD ["mysqld"]

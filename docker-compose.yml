@@ -1,7 +1,9 @@
 version: "3.9"
 services:
   manager:
-    build: .
+    build: ./manager
+    image: manager
+    container_name: manager
     ports:
       - "5000:5000"
     volumes:
@@ -11,6 +13,15 @@ services:
       network1:
         aliases:
           - manager
+
+  broker:
+    build: ./broker
+    image: broker
+    container_name: broker0
+    networks:
+      network1:
+        aliases:
+          - broker0
 
 networks:
   network1:
