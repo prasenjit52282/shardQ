@@ -3,6 +3,9 @@ import requests
 class ApiHandler:
     def __init__(self,url='localhost:5000'):
         self.url='http://'+url
+
+    def setbroker(self,broker='broker0'):
+        self.url=f'http://{broker}:5000'
         
     def raiseExceptionOnProhabitedTopic(self,topic):
         if topic=='subl' or topic=='publ':

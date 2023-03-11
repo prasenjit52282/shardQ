@@ -1,10 +1,13 @@
 import os
 import json
 import random
+from .api import ApiHandler
 from collections import defaultdict
 
 class Brokers:
     def __init__(self):
+        self.api=ApiHandler()
+        self.topics={}
         self.refresh()
 
     def refresh(self):
@@ -24,33 +27,40 @@ class Brokers:
         self.refresh()
         topics=defaultdict(lambda:{})
         for bkr in self.brokers:
-            msg=json.loads(os.popen(f"curl -XGET 'http://{bkr}:5000/topics'").read())["message"]
-            if type(msg)==str:
-                continue
-            else:
+            try:
+                self.api.setbroker(bkr)
+                msg=self.api.get_topics()
                 for TxP in msg:
                     T,P=TxP.split("x")
                     topics[T][P]=bkr
+            except:pass
         return dict(topics)
     
     def checkifTopicPartExist(self,T,P):
-        topics=self.lisTopics()
         try:
-            print(topics[T][P])
+            print(self.topics[T][P])
             return True
         except KeyError:
             return False
 
-
     def add_topic(self,T,P):
         if self.checkifTopicPartExist(T,P):
-            return f"{T}:{P} already exist", 400
+            return f"{T}:{P} already exist",400
         bkr=self.choose()
-        res=\
-        json.loads(os.popen(f"curl -XPOST http://{bkr}:5000/topics -d "+"\'{\"topic_name\":"+\
-                            f"\"{T}x{P}\""+\
-                            "}\' -H \'Content-Type: application/json\'").read())
-        if res["status"]=="failure":
-            return f"{T}:{P} already exist", 400
-        else:
-            return f"{T}:{P} created successfully", 200
+        try:
+            self.api.setbroker(bkr)
+            res=self.api.add_topics(f"{T}x{P}")
+            self.topics=self.lisTopics()
+            return res, 200
+        except Exception as e:
+            return str(e),400
+
+    def producer_registration(self,T,P):
+        self.add_topic(T,P)
+        bkr=self.topics[T][P]
+        try:
+            self.api.setbroker(bkr)
+            prod_id=self.api.reg_producer(f"{T}x{P}")
+            return f"{T}x{P}@"+prod_id, 200
+        except Exception as e:
+            return str(e),400

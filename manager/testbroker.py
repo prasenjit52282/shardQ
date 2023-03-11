@@ -1,6 +1,6 @@
 import random
 import argparse
-from api import ApiHandler
+from library import ApiHandler
 
 parser=argparse.ArgumentParser(description='example: python test_api.py --broker 10.110.10.216:5000')
 parser.add_argument('--broker', type=str, help='broker address ip:port', required=True)

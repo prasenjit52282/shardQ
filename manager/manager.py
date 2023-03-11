@@ -9,6 +9,7 @@ CORS(app)
 brokers=Brokers()
 persist=os.environ['PERSIST']
 
+#--------------------- Handling Brokers ----------------------------------#
 @app.route("/brokers",methods=["GET"])
 def list_brokers():
     return jsonify(brokers.list), 200
@@ -43,13 +44,46 @@ def test_broker(broker_name):
     else:
         return res, 200
 
+#--------------------------------- Handling Topics -------------------------------#
 @app.route("/topics",methods=["GET"])
 def get_topics():
-    return jsonify(brokers.lisTopics()),200
+    return jsonify(brokers.topics),200
 
-@app.route("/topics/<topic_name>/<part>",methods=["GET"])
+@app.route("/topics/add/<topic_name>/<part>",methods=["GET"])
 def add_topic(topic_name,part):
     return brokers.add_topic(topic_name,part)
+
+#--------------------------------- Handling Publishers ----------------------------#
+@app.route("/producer/register",methods=["POST"])
+def producer_registration():
+    data=request.get_json()
+    topic_name=data["topic"]
+    part= data["part"] if "part" in data else 'None'
+    if part == 'None': return "No ready for part=None yet", 400
+    return brokers.producer_registration(topic_name,part)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__=='__main__':
