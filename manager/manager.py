@@ -33,6 +33,7 @@ def rm_brokers(broker_name):
         all_brokers=brokers.list
         for b in all_brokers:
             os.system(f'sudo docker stop {b} && sudo docker rm {b}')
+        brokers.refreshTopics()
         return "Removed all brokers",200
     else:
         if broker_name not in brokers.list: 
@@ -41,6 +42,7 @@ def rm_brokers(broker_name):
         if len(res)==0:
             return f"Unable to remove {broker_name} - check manager logs",400
         else:
+            brokers.refreshTopics()
             return f"Removed {broker_name}", 200
 
 @app.route("/brokers/test/<broker_name>",methods=["GET"])

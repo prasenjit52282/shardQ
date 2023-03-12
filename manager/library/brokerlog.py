@@ -10,6 +10,9 @@ class Brokers:
         self.topics={}
         self.refresh()
 
+    def refreshTopics(self):
+        self.topics=self.lisTopics()
+
     def refresh(self):
         containers=os.popen("sudo docker network inspect mynet | grep Name | tail -n +2 | cut -d ':' -f2 | tr -d ',\n\"' ").read().strip().split()
         self.brokers=[e for e in containers if 'broker' in e]
@@ -79,17 +82,20 @@ class Brokers:
                 return str(e),400
 
     def produce(self,bkr,TxP,nhop_pub_id,msg):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, thus can not produce",400
         try:
             self.api.setbroker(bkr)
             self.api.produce(TxP,nhop_pub_id,msg)
-            return "Success",200
+            return TxP+":"+"Success",200
         except Exception as e:
             return str(e),400
 
     def consumer_registration(self,T,P,subl):
         if P is None:
             if T not in self.topics:
-                return f"{T} does not exist", 400
+                return f"{T} does not exist, thus can not register as consumer", 400
             all_ids=[]
             for part,bkr in self.topics[T].items():
                 self.api.setbroker(bkr)
@@ -100,7 +106,7 @@ class Brokers:
             return str(sub_id), 200
         else:
             if not self.checkifTopicPartExist(T,P):
-                return f"{T}:{P} does not exist",400
+                return f"{T}:{P} does not exist, thus can not register as consumer",400
             bkr=self.topics[T][P]
             try:
                 self.api.setbroker(bkr)
@@ -112,14 +118,20 @@ class Brokers:
 
 
     def consume(self,bkr,TxP,nhop_sub_id):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, thus can not consume",400
         try:
             self.api.setbroker(bkr)
             res=self.api.consume(TxP,nhop_sub_id)
-            return res.message,200
+            return TxP+":"+res.message,200
         except Exception as e:
             return str(e),400
 
     def get_size(self,bkr,TxP,nhop_sub_id):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, invalid size",400
         try:
             self.api.setbroker(bkr)
             res=self.api.get_size(TxP,nhop_sub_id)
