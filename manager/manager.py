@@ -61,8 +61,7 @@ def add_topic(topic_name,part):
 def producer_registration():
     data=request.get_json()
     topic_name=data["topic"]
-    part= data["part"] if "part" in data else 'None'
-    if part == 'None': return "No ready for part=None yet", 400
+    part= data["part"] if "part" in data else None
     return brokers.producer_registration(topic_name,part,publ)
 
 @app.route("/producer/produce",methods=["POST"])
@@ -79,8 +78,7 @@ def handle_produce():
 def consumer_registration():
     data=request.get_json()
     topic_name=data["topic"]
-    part= data["part"] if "part" in data else 'None'
-    if part == 'None': return "No ready for part=None yet", 400
+    part= data["part"] if "part" in data else None
     return brokers.consumer_registration(topic_name,part,subl)
 
 @app.route("/consumer/consume/<consumer_id>",methods=["GET"])

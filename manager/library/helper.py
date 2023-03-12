@@ -97,7 +97,7 @@ class SQLHandler:
     def hasTable(self,tabname=None,columns=None,dtypes=None):
         res=self.query("SHOW TABLES")
         if tabname not in [r[0] for r in res]:
-            dmap={'int':'INT','str':'VARCHAR(32)'}
+            dmap={'int':'INT','str':'VARCHAR(512)'}
             col_config=''
             for c,d in zip(columns,dtypes):
                 col_config+=f", {c} {dmap[d]}"
