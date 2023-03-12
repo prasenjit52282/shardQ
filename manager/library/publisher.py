@@ -21,8 +21,19 @@ class Publishers:
         T,P=self.publ.GetAT(pub_id,"comb").split("@")[0].split("x")
         return T==topic_name and P==part
 
+    def get_round_robin(self,pub_id):
+        fused_id=self.publ.GetAT(pub_id,"comb")
+        ids=fused_id.split("|")
+        if len(ids)==1:
+            return ids[0]
+        else:
+            idx=self.publ.GetAT(pub_id,"ridx")
+            next_idx=(idx+1)%len(ids)
+            self.publ.Update(pub_id,"ridx",next_idx)
+            return ids[idx]
+
     def translate(self,pub_id):
-        combined_id=self.publ.GetAT(pub_id,"comb")
+        combined_id=self.get_round_robin(pub_id)
         TxP=combined_id.split("@")[0]
         nhop_pub_id='@'.join(combined_id.split('@')[1:])
         return TxP,nhop_pub_id

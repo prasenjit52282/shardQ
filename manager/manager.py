@@ -19,6 +19,8 @@ def list_brokers():
 
 @app.route("/brokers/add/<broker_name>",methods=["GET"])
 def add_broker(broker_name):
+    if broker_name in brokers.list: 
+        return f"{broker_name} already exist", 400
     res=os.popen(f'sudo docker run --name {broker_name} --network mynet --network-alias {broker_name} -e BID={broker_name} -e PERSIST={persist}  -d broker:latest').read()
     if len(res)==0:
         return f"Unable to add {broker_name} - check manager logs", 400
@@ -33,6 +35,8 @@ def rm_brokers(broker_name):
             os.system(f'sudo docker stop {b} && sudo docker rm {b}')
         return "Removed all brokers",200
     else:
+        if broker_name not in brokers.list: 
+            return f"{broker_name} does not exist", 400
         res=os.popen(f'sudo docker stop {broker_name} && sudo docker rm {broker_name}').read()
         if len(res)==0:
             return f"Unable to remove {broker_name} - check manager logs",400
@@ -41,6 +45,8 @@ def rm_brokers(broker_name):
 
 @app.route("/brokers/test/<broker_name>",methods=["GET"])
 def test_broker(broker_name):
+    if broker_name not in brokers.list: 
+        return f"{broker_name} does not exist", 400
     res=os.popen(f'bash /mgr/testbroker.sh {broker_name} 5000').read()
     if len(res)==0:
         return f"Unable to test {broker_name} - check manager logs",400
