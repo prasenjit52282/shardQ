@@ -163,3 +163,4 @@ cython_debug/
 test.py
 /**/*.ipynb
 /test/consumer_*.txt
+test.*

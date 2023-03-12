@@ -10,6 +10,9 @@ class Brokers:
         self.topics={}
         self.refresh()
 
+    def refreshTopics(self):
+        self.topics=self.lisTopics()
+
     def refresh(self):
         containers=os.popen("sudo docker network inspect mynet | grep Name | tail -n +2 | cut -d ':' -f2 | tr -d ',\n\"' ").read().strip().split()
         self.brokers=[e for e in containers if 'broker' in e]
@@ -55,12 +58,83 @@ class Brokers:
         except Exception as e:
             return str(e),400
 
-    def producer_registration(self,T,P):
-        self.add_topic(T,P)
-        bkr=self.topics[T][P]
+    def producer_registration(self,T,P,publ):
+        if P is None:
+            if T not in self.topics:
+                return f"{T} does not exist thus no partitions are available", 400
+            all_ids=[]
+            for part,bkr in self.topics[T].items():
+                self.api.setbroker(bkr)
+                prod_id=self.api.reg_producer(f"{T}x{part}")
+                all_ids.append(f"{T}x{part}@"+prod_id)
+            combined_id='|'.join(all_ids)
+            pub_id=publ.add_publisher(combined_id)
+            return str(pub_id), 200
+        else:
+            self.add_topic(T,P)
+            bkr=self.topics[T][P]
+            try:
+                self.api.setbroker(bkr)
+                prod_id=self.api.reg_producer(f"{T}x{P}")
+                pub_id=publ.add_publisher(f"{T}x{P}@"+prod_id)
+                return str(pub_id), 200
+            except Exception as e:
+                return str(e),400
+
+    def produce(self,bkr,TxP,nhop_pub_id,msg):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, thus can not produce",400
         try:
             self.api.setbroker(bkr)
-            prod_id=self.api.reg_producer(f"{T}x{P}")
-            return f"{T}x{P}@"+prod_id, 200
+            self.api.produce(TxP,nhop_pub_id,msg)
+            return TxP+":"+"Success",200
+        except Exception as e:
+            return str(e),400
+
+    def consumer_registration(self,T,P,subl):
+        if P is None:
+            if T not in self.topics:
+                return f"{T} does not exist, thus can not register as consumer", 400
+            all_ids=[]
+            for part,bkr in self.topics[T].items():
+                self.api.setbroker(bkr)
+                sob_id=self.api.reg_consumer(f"{T}x{part}")
+                all_ids.append(f"{T}x{part}@"+sob_id)
+            combined_id='|'.join(all_ids)
+            sub_id=subl.add_subscriber(combined_id)
+            return str(sub_id), 200
+        else:
+            if not self.checkifTopicPartExist(T,P):
+                return f"{T}:{P} does not exist, thus can not register as consumer",400
+            bkr=self.topics[T][P]
+            try:
+                self.api.setbroker(bkr)
+                sob_id=self.api.reg_consumer(f"{T}x{P}")
+                sub_id=subl.add_subscriber(f"{T}x{P}@"+sob_id)
+                return str(sub_id), 200
+            except Exception as e:
+                return str(e),400
+
+
+    def consume(self,bkr,TxP,nhop_sub_id):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, thus can not consume",400
+        try:
+            self.api.setbroker(bkr)
+            res=self.api.consume(TxP,nhop_sub_id)
+            return TxP+":"+res.message,200
+        except Exception as e:
+            return str(e),400
+
+    def get_size(self,bkr,TxP,nhop_sub_id):
+        T,P=TxP.split("x")
+        if (not self.checkifTopicPartExist(T,P)) or bkr!=self.topics[T][P]:
+            return f"{T}:{P}@{bkr} does not exist, invalid size",400
+        try:
+            self.api.setbroker(bkr)
+            res=self.api.get_size(TxP,nhop_sub_id)
+            return res,200
         except Exception as e:
             return str(e),400

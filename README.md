@@ -14,6 +14,10 @@ sudo docker run --name broker2 --network mynet --network-alias broker2 -e BID=br
 
 curl -XGET "http://localhost:5000/brokers/rm" 
 curl -XPOST "http://localhost:5000/add" -d '{"broker_name": "broker1"}' -H "Content-Type: application/json"
-curl -XPOST "http://localhost:5000/producer/register" -d '{"topic": "T3", "part": "P2"}' -H "Content-Type: application/json"
+curl -XPOST "http://localhost:5000/producer/register" -d '{"topic": "T3", "part": "P1"}' -H "Content-Type: application/json"
 
 curl -XPOST "http://localhost:5000/producer/register" -d '{"topic": "T3"}' -H "Content-Type: application/json"
+
+curl -XPOST "http://localhost:5000/producer/produce" -d '{"producer_id": "0", "message": "Hello"}' -H "Content-Type: application/json"
+
+curl -XPOST "http://localhost:5000/consumer/register" -d '{"topic": "T3", "part": "P1"}' -H "Content-Type: application/json"
