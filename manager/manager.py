@@ -68,7 +68,7 @@ def producer_registration():
 @app.route("/producer/produce",methods=["POST"])
 def handle_produce():
     data=request.get_json()
-    pub_id=data["producer_id"]
+    pub_id=int(data["producer_id"])
     msg=data["message"]
     TxP,nhop_pub_id=publ.translate(pub_id)
     bkr=nhop_pub_id.split('@')[0]
@@ -83,17 +83,17 @@ def consumer_registration():
     if part == 'None': return "No ready for part=None yet", 400
     return brokers.consumer_registration(topic_name,part,subl)
 
-@app.route("/consumer/consume",methods=["GET"])
-def handle_consume():
-    sub_id=request.args.get("consumer_id")
+@app.route("/consumer/consume/<consumer_id>",methods=["GET"])
+def handle_consume(consumer_id):
+    sub_id=int(consumer_id)
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
     return brokers.consume(bkr,TxP,nhop_sub_id)
 
 #------------------------------------ Size -------------------------------------------#
-@app.route("/size",methods=["GET"])
-def get_size():
-    sub_id=request.args.get("consumer_id")
+@app.route("/size/<consumer_id>",methods=["GET"])
+def get_size(consumer_id):
+    sub_id=int(consumer_id)
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
     return brokers.get_size(bkr,TxP,nhop_sub_id)

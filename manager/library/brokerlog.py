@@ -62,7 +62,7 @@ class Brokers:
             self.api.setbroker(bkr)
             prod_id=self.api.reg_producer(f"{T}x{P}")
             pub_id=publ.add_publisher(f"{T}x{P}@"+prod_id)
-            return pub_id, 200
+            return str(pub_id), 200
         except Exception as e:
             return str(e),400
 
@@ -81,8 +81,8 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             sob_id=self.api.reg_consumer(f"{T}x{P}")
-            sub_id=subl.add_subscriber(sob_id)
-            return sub_id, 200
+            sub_id=subl.add_subscriber(f"{T}x{P}@"+sob_id)
+            return str(sub_id), 200
         except Exception as e:
             return str(e),400
 
@@ -91,14 +91,14 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             res=self.api.consume(TxP,nhop_sub_id)
-            return res,200
+            return res.message,200
         except Exception as e:
             return str(e),400
 
-    def get_size(bkr,TxP,nhop_sub_id):
+    def get_size(self,bkr,TxP,nhop_sub_id):
         try:
             self.api.setbroker(bkr)
             res=self.api.get_size(TxP,nhop_sub_id)
-            return res,200
+            return str(res),200
         except Exception as e:
             return str(e),400
