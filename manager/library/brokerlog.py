@@ -135,6 +135,6 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             res=self.api.get_size(TxP,nhop_sub_id)
-            return str(res),200
+            return res,200
         except Exception as e:
             return str(e),400

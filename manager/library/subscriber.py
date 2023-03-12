@@ -38,5 +38,15 @@ class Subscribers:
         nhop_sub_id='@'.join(combined_id.split('@')[1:])
         return TxP,nhop_sub_id
 
+    def translateAll(self,sub_id):
+        fused_id=self.subl.GetAT(sub_id,"comb")
+        ids=fused_id.split("|")
+        l=[]
+        for d in ids:
+            TxP=d.split("@")[0]
+            nhop_sub_id='@'.join(d.split('@')[1:])
+            l.append((TxP,nhop_sub_id))
+        return l
+
     def is_valid_id(self,sub_id):
         return 0<=sub_id<self.subl.Count

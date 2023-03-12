@@ -100,9 +100,17 @@ def handle_consume(consumer_id):
 @app.route("/size/<consumer_id>",methods=["GET"])
 def get_size(consumer_id):
     sub_id=int(consumer_id)
-    TxP,nhop_sub_id=subl.translate(sub_id)
-    bkr=nhop_sub_id.split('@')[0]
-    return brokers.get_size(bkr,TxP,nhop_sub_id)
+    l=subl.translateAll(sub_id)
+    summ=0
+    note=""
+    for TxP,nhop_sub_id in l:
+        bkr=nhop_sub_id.split('@')[0]
+        val,status=brokers.get_size(bkr,TxP,nhop_sub_id)
+        if status==200:
+            summ+=val
+        else:
+            note+=val+"\n"
+    return str(summ),200 #add note later
 
 
 
