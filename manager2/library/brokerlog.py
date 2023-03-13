@@ -9,7 +9,7 @@ class Brokers:
     @property
     def list(self):
         res=requests.get("http://manager:5000/brokers")
-        return res.json()
+        return res.json()["message"]
 
     @property
     def curr_topics(self):
@@ -18,7 +18,7 @@ class Brokers:
 
     def refreshTopics(self):
         res=requests.get("http://manager:5000/topics")
-        self.topics=res.json()
+        self.topics=res.json()["message"]
 
     def checkifTopicPartExist(self,T,P):
         self.refreshTopics()
@@ -40,7 +40,7 @@ class Brokers:
                 all_ids.append(f"{T}x{part}@"+sob_id)
             combined_id='|'.join(all_ids)
             sub_id=subl.add_subscriber(combined_id)
-            return str(sub_id), 200
+            return sub_id, 200
         else:
             if not self.checkifTopicPartExist(T,P):
                 return f"{T}:{P} does not exist, thus can not register as consumer",400
@@ -49,7 +49,7 @@ class Brokers:
                 self.api.setbroker(bkr)
                 sob_id=self.api.reg_consumer(f"{T}x{P}")
                 sub_id=subl.add_subscriber(f"{T}x{P}@"+sob_id)
-                return str(sub_id), 200
+                return sub_id, 200
             except Exception as e:
                 return str(e),400
 
@@ -61,7 +61,7 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             res=self.api.consume(TxP,nhop_sub_id)
-            return TxP+":"+res.message,200
+            return res.message,200
         except Exception as e:
             return str(e),400
 

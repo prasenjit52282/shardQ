@@ -75,7 +75,7 @@ class Brokers:
                 all_ids.append(f"{T}x{part}@"+prod_id)
             combined_id='|'.join(all_ids)
             pub_id=publ.add_publisher(combined_id)
-            return str(pub_id), 200
+            return pub_id, 200
         else:
             self.add_topic(T,P)
             bkr=self.topics[T][P]
@@ -83,7 +83,7 @@ class Brokers:
                 self.api.setbroker(bkr)
                 prod_id=self.api.reg_producer(f"{T}x{P}")
                 pub_id=publ.add_publisher(f"{T}x{P}@"+prod_id)
-                return str(pub_id), 200
+                return pub_id, 200
             except Exception as e:
                 return str(e),400
 
@@ -110,7 +110,7 @@ class Brokers:
                 all_ids.append(f"{T}x{part}@"+sob_id)
             combined_id='|'.join(all_ids)
             sub_id=subl.add_subscriber(combined_id)
-            return str(sub_id), 200
+            return sub_id, 200
         else:
             if not self.checkifTopicPartExist(T,P):
                 return f"{T}:{P} does not exist, thus can not register as consumer",400
@@ -119,7 +119,7 @@ class Brokers:
                 self.api.setbroker(bkr)
                 sob_id=self.api.reg_consumer(f"{T}x{P}")
                 sub_id=subl.add_subscriber(f"{T}x{P}@"+sob_id)
-                return str(sub_id), 200
+                return sub_id, 200
             except Exception as e:
                 return str(e),400
 
@@ -131,7 +131,7 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             res=self.api.consume(TxP,nhop_sub_id)
-            return TxP+":"+res.message,200
+            return res.message,200
         except Exception as e:
             return str(e),400
 
@@ -145,3 +145,40 @@ class Brokers:
             return res,200
         except Exception as e:
             return str(e),400
+
+
+    def add_broker(self,broker_name,persist):
+        if broker_name in self.brokers: 
+            return f"{broker_name} already exist", 400
+        res=os.popen(f'sudo docker run --name {broker_name} --network mynet --network-alias {broker_name} -e BID={broker_name} -e PERSIST={persist}  -d broker:latest').read()
+        if len(res)==0:
+            return f"Unable to add {broker_name} - check manager logs", 400
+        else:
+            self.refresh()
+            return f"successfully added {broker_name}", 200
+
+
+    def remove_broker(self,broker_name):
+        if broker_name=='all':
+            for b in self.brokers:
+                os.system(f'sudo docker stop {b} && sudo docker rm {b}')
+            self.refreshTopics()
+            return "Removed all brokers",200
+        else:
+            if broker_name not in self.brokers: 
+                return f"{broker_name} does not exist", 400
+            res=os.popen(f'sudo docker stop {broker_name} && sudo docker rm {broker_name}').read()
+            if len(res)==0:
+                return f"Unable to remove {broker_name} - check manager logs",400
+            else:
+                self.refreshTopics()
+                return f"Removed {broker_name}", 200
+
+    def test_broker(self,broker_name):
+        if broker_name not in self.brokers: 
+            return f"{broker_name} does not exist", 400
+        res=os.popen(f'bash /mgr/testbroker.sh {broker_name} 5000').read()
+        if len(res)==0:
+            return f"Unable to test {broker_name} - check manager logs",400
+        else:
+            return res, 200
