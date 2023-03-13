@@ -8,7 +8,7 @@ inmem:
 	@sudo docker-compose --env-file ./config/.env.inmem up -d
 
 clean:
-	@curl -XGET "http://localhost:5000/brokers/rm/all" 
+	@curl -XGET "http://localhost:5000/brokers/rm?broker_name=all" 
 	@sudo docker-compose down --rmi all
 
 prune:
