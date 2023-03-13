@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 import mysql.connector
@@ -137,3 +138,6 @@ class SQLHandler:
     def Count(self,table_name):
         res=self.query(f"SELECT count(id) FROM {table_name}")
         return res[0][0]
+
+def Response(status_code,**kwargs):
+    return json.dumps(kwargs),status_code

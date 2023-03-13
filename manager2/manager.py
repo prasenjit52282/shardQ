@@ -1,7 +1,7 @@
 import os
 import requests
-from library import Brokers,Subscribers
-from flask import Flask, jsonify, request
+from library import Brokers,Subscribers,Response
+from flask import Flask, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -13,12 +13,12 @@ subl=Subscribers()
 #--------------------- Handling Brokers ----------------------------------#
 @app.route("/brokers",methods=["GET"])
 def list_brokers():
-    return jsonify(brokers.list), 200
+    return Response(200, message=brokers.list, status='success')
 
 #--------------------------------- Handling Topics -------------------------------#
 @app.route("/topics",methods=["GET"])
 def get_topics():
-    return jsonify(brokers.curr_topics),200
+    return Response(200, message=brokers.curr_topics, status='success')
 
 #---------------------------------- Handling Subscribers ----------------------------#
 @app.route("/consumer/register",methods=["POST"])
@@ -26,19 +26,23 @@ def consumer_registration():
     data=request.get_json()
     topic_name=data["topic"]
     part= data["part"] if "part" in data else None
-    return brokers.consumer_registration(topic_name,part,subl)
+    msg,status_code=brokers.consumer_registration(topic_name,part,subl)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
-@app.route("/consumer/consume/<consumer_id>",methods=["GET"])
-def handle_consume(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/consumer/consume",methods=["GET"])
+def handle_consume():
+    sub_id=int(request.args.get("consumer_id"))
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
-    return brokers.consume(bkr,TxP,nhop_sub_id)
+    msg,status_code=brokers.consume(bkr,TxP,nhop_sub_id)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 #------------------------------------ Size -------------------------------------------#
-@app.route("/size/<consumer_id>",methods=["GET"])
-def get_size(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/size",methods=["GET"])
+def get_size():
+    sub_id=int(request.args.get("consumer_id"))
     l=subl.translateAll(sub_id)
     summ=0
     note=""
@@ -49,7 +53,7 @@ def get_size(consumer_id):
             summ+=val
         else:
             note+=val+"\n"
-    return str(summ),200 #add note later
+    return Response(200, message=summ, note=note, status='success')
 
 
 

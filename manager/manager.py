@@ -1,6 +1,6 @@
 import os
-from library import Brokers,Publishers,Subscribers
-from flask import Flask, jsonify, request
+from library import Brokers,Publishers,Subscribers,Response
+from flask import Flask, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -15,55 +15,42 @@ persist=os.environ['PERSIST']
 #--------------------- Handling Brokers ----------------------------------#
 @app.route("/brokers",methods=["GET"])
 def list_brokers():
-    return jsonify(brokers.list), 200
+    return Response(200, message=brokers.list, status='success')
 
-@app.route("/brokers/add/<broker_name>",methods=["GET"])
-def add_broker(broker_name):
-    if broker_name in brokers.list: 
-        return f"{broker_name} already exist", 400
-    res=os.popen(f'sudo docker run --name {broker_name} --network mynet --network-alias {broker_name} -e BID={broker_name} -e PERSIST={persist}  -d broker:latest').read()
-    if len(res)==0:
-        return f"Unable to add {broker_name} - check manager logs", 400
-    else:
-        brokers.refresh()
-        return f"successfully added {broker_name}", 200
+@app.route("/brokers/add",methods=["GET"])
+def add_broker():
+    broker_name=request.args.get("broker_name")
+    msg,status_code=brokers.add_broker(broker_name,persist)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
-@app.route("/brokers/rm/<broker_name>",methods=["GET"])
-def rm_brokers(broker_name):
-    if broker_name=='all':
-        all_brokers=brokers.list
-        for b in all_brokers:
-            os.system(f'sudo docker stop {b} && sudo docker rm {b}')
-        brokers.refreshTopics()
-        return "Removed all brokers",200
-    else:
-        if broker_name not in brokers.list: 
-            return f"{broker_name} does not exist", 400
-        res=os.popen(f'sudo docker stop {broker_name} && sudo docker rm {broker_name}').read()
-        if len(res)==0:
-            return f"Unable to remove {broker_name} - check manager logs",400
-        else:
-            brokers.refreshTopics()
-            return f"Removed {broker_name}", 200
+@app.route("/brokers/rm",methods=["GET"])
+def rm_brokers():
+    broker_name=request.args.get("broker_name")
+    msg,status_code=brokers.remove_broker(broker_name)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
-@app.route("/brokers/test/<broker_name>",methods=["GET"])
-def test_broker(broker_name):
-    if broker_name not in brokers.list: 
-        return f"{broker_name} does not exist", 400
-    res=os.popen(f'bash /mgr/testbroker.sh {broker_name} 5000').read()
-    if len(res)==0:
-        return f"Unable to test {broker_name} - check manager logs",400
-    else:
-        return res, 200
+@app.route("/brokers/test",methods=["GET"])
+def test_broker():
+    broker_name=request.args.get("broker_name")
+    msg,status_code=brokers.test_broker(broker_name)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 #--------------------------------- Handling Topics -------------------------------#
 @app.route("/topics",methods=["GET"])
 def get_topics():
-    return jsonify(brokers.curr_topics),200
+    return Response(200, message=brokers.curr_topics, status='success')
 
-@app.route("/topics/add/<topic_name>/<part>",methods=["GET"])
-def add_topic(topic_name,part):
-    return brokers.add_topic(topic_name,part)
+@app.route("/topics/add",methods=["POST"])
+def add_topic():
+    data=request.get_json()
+    topic_name=data["topic"]
+    part=data["part"]
+    msg,status_code=brokers.add_topic(topic_name,part)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 #--------------------------------- Handling Publishers ----------------------------#
 @app.route("/producer/register",methods=["POST"])
@@ -71,7 +58,9 @@ def producer_registration():
     data=request.get_json()
     topic_name=data["topic"]
     part= data["part"] if "part" in data else None
-    return brokers.producer_registration(topic_name,part,publ)
+    msg,status_code=brokers.producer_registration(topic_name,part,publ)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 @app.route("/producer/produce",methods=["POST"])
 def handle_produce():
@@ -80,7 +69,9 @@ def handle_produce():
     msg=data["message"]
     TxP,nhop_pub_id=publ.translate(pub_id)
     bkr=nhop_pub_id.split('@')[0]
-    return brokers.produce(bkr,TxP,nhop_pub_id,msg)
+    msg,status_code=brokers.produce(bkr,TxP,nhop_pub_id,msg)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 #---------------------------------- Handling Subscribers ----------------------------#
 @app.route("/consumer/register",methods=["POST"])
@@ -88,19 +79,23 @@ def consumer_registration():
     data=request.get_json()
     topic_name=data["topic"]
     part= data["part"] if "part" in data else None
-    return brokers.consumer_registration(topic_name,part,subl)
+    msg,status_code=brokers.consumer_registration(topic_name,part,subl)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
-@app.route("/consumer/consume/<consumer_id>",methods=["GET"])
-def handle_consume(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/consumer/consume",methods=["GET"])
+def handle_consume():
+    sub_id=int(request.args.get("consumer_id"))
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
-    return brokers.consume(bkr,TxP,nhop_sub_id)
+    msg,status_code=brokers.consume(bkr,TxP,nhop_sub_id)
+    mode='success' if status_code==200 else 'failure'
+    return Response(status_code, message=msg, status=mode)
 
 #------------------------------------ Size -------------------------------------------#
-@app.route("/size/<consumer_id>",methods=["GET"])
-def get_size(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/size",methods=["GET"])
+def get_size():
+    sub_id=int(request.args.get("consumer_id"))
     l=subl.translateAll(sub_id)
     summ=0
     note=""
@@ -111,7 +106,7 @@ def get_size(consumer_id):
             summ+=val
         else:
             note+=val+"\n"
-    return str(summ),200 #add note later
+    return Response(200, message=summ, note=note, status='success')
 
 
 
