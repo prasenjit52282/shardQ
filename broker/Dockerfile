@@ -12,6 +12,14 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN chmod +x /bkr/custom-entry.sh
 
+ENV USER=theuser
+RUN adduser --home /home/$USER --disabled-password --gecos GECOS $USER \
+  && chsh -s /bin/zsh $USER
+RUN touch /bkr/topicLog.db
+RUN chown $USER /bkr/topicLog.db
+
+USER $USER
+ENV HOME=/home/$USER
 ENV MYSQL_ROOT_PASSWORD="abc"
 
 EXPOSE 5000

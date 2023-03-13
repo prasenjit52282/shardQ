@@ -1,15 +1,46 @@
+import shelve
 from helper import DataHandler
 from threading import Semaphore
+
+class WAL:
+    def __init__(self,loc):
+        self.loc=loc
+
+    def open(self):
+        self.log=shelve.open(self.loc)
+
+    def close(self):
+        self.log.close()
+    
+    def keep(self,topic_name,msg):
+        self.open()
+        self.log[topic_name]=msg
+        self.close()
+
+    def remove(self,topic_name):
+        self.open()
+        self.log.pop(topic_name)
+        self.close()
 
 class TopicQueues:
     def __init__(self,is_SQL=False,tablenames=[],SQL_handle=None):
         self.queues={}
         self.locks={}
+        self.logger=WAL("topicLog")
 
         self.is_SQL=is_SQL
         self.sql_handle=SQL_handle
         if self.is_SQL:
             self._restoreSQLTables(tablenames)
+            self._restoreWAL()
+
+    def _restoreWAL(self):
+        self.logger.open()
+        itemkeys=list(self.logger.log.keys())
+        for topic_name in itemkeys:
+            msg=self.logger.log.pop(topic_name)
+            self.add_msg_for_topic(topic_name,msg,wal=False)
+        self.logger.close()
 
     def _restoreSQLTables(self,tablenames):
         for tbname in tablenames:
@@ -25,9 +56,11 @@ class TopicQueues:
         self.queues[topic_name]=self.get_empty_topic_log(topic_name)
         self.locks[topic_name]=Semaphore()
         
-    def add_msg_for_topic(self,topic_name,msg):
+    def add_msg_for_topic(self,topic_name,msg,wal=True):
         self.locks[topic_name].acquire()
+        if wal:self.logger.keep(topic_name,msg)
         self.add_msg_to_log(self.queues[topic_name],msg)
+        if wal:self.logger.remove(topic_name)
         self.locks[topic_name].release()
         
     def topic_qsize(self,topic_name,curr_idx_in_q):
