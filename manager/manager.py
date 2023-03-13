@@ -17,20 +17,23 @@ persist=os.environ['PERSIST']
 def list_brokers():
     return Response(200, message=brokers.list, status='success')
 
-@app.route("/brokers/add/<broker_name>",methods=["GET"])
-def add_broker(broker_name):
+@app.route("/brokers/add",methods=["GET"])
+def add_broker():
+    broker_name=request.args.get("broker_name")
     msg,status_code=brokers.add_broker(broker_name,persist)
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
 
-@app.route("/brokers/rm/<broker_name>",methods=["GET"])
-def rm_brokers(broker_name):
+@app.route("/brokers/rm",methods=["GET"])
+def rm_brokers():
+    broker_name=request.args.get("broker_name")
     msg,status_code=brokers.remove_broker(broker_name)
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
 
-@app.route("/brokers/test/<broker_name>",methods=["GET"])
-def test_broker(broker_name):
+@app.route("/brokers/test",methods=["GET"])
+def test_broker():
+    broker_name=request.args.get("broker_name")
     msg,status_code=brokers.test_broker(broker_name)
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
@@ -40,8 +43,11 @@ def test_broker(broker_name):
 def get_topics():
     return Response(200, message=brokers.curr_topics, status='success')
 
-@app.route("/topics/add/<topic_name>/<part>",methods=["GET"])
-def add_topic(topic_name,part):
+@app.route("/topics/add",methods=["POST"])
+def add_topic():
+    data=request.get_json()
+    topic_name=data["topic"]
+    part=data["part"]
     msg,status_code=brokers.add_topic(topic_name,part)
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
@@ -77,9 +83,9 @@ def consumer_registration():
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
 
-@app.route("/consumer/consume/<consumer_id>",methods=["GET"])
-def handle_consume(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/consumer/consume",methods=["GET"])
+def handle_consume():
+    sub_id=int(request.args.get("consumer_id"))
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
     msg,status_code=brokers.consume(bkr,TxP,nhop_sub_id)
@@ -87,9 +93,9 @@ def handle_consume(consumer_id):
     return Response(status_code, message=msg, status=mode)
 
 #------------------------------------ Size -------------------------------------------#
-@app.route("/size/<consumer_id>",methods=["GET"])
-def get_size(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/size",methods=["GET"])
+def get_size():
+    sub_id=int(request.args.get("consumer_id"))
     l=subl.translateAll(sub_id)
     summ=0
     note=""

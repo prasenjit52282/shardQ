@@ -30,9 +30,9 @@ def consumer_registration():
     mode='success' if status_code==200 else 'failure'
     return Response(status_code, message=msg, status=mode)
 
-@app.route("/consumer/consume/<consumer_id>",methods=["GET"])
-def handle_consume(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/consumer/consume",methods=["GET"])
+def handle_consume():
+    sub_id=int(request.args.get("consumer_id"))
     TxP,nhop_sub_id=subl.translate(sub_id)
     bkr=nhop_sub_id.split('@')[0]
     msg,status_code=brokers.consume(bkr,TxP,nhop_sub_id)
@@ -40,9 +40,9 @@ def handle_consume(consumer_id):
     return Response(status_code, message=msg, status=mode)
 
 #------------------------------------ Size -------------------------------------------#
-@app.route("/size/<consumer_id>",methods=["GET"])
-def get_size(consumer_id):
-    sub_id=int(consumer_id)
+@app.route("/size",methods=["GET"])
+def get_size():
+    sub_id=int(request.args.get("consumer_id"))
     l=subl.translateAll(sub_id)
     summ=0
     note=""
