@@ -16,6 +16,19 @@ services:
     environment:
       PERSIST: ${PERSISTENCE_MODE}
 
+  manager2:
+    build: ./manager2
+    image: manager2
+    container_name: manager2
+    depends_on:
+      - manager
+    ports:
+      - "5001:5000"
+    networks:
+      network1:
+        aliases:
+          - manager2
+
   broker:
     build: ./broker
     image: broker

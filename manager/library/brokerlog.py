@@ -10,6 +10,11 @@ class Brokers:
         self.topics={}
         self.refresh()
 
+    @property
+    def curr_topics(self):
+        self.refreshTopics()
+        return self.topics
+
     def refreshTopics(self):
         self.topics=self.lisTopics()
 
@@ -40,6 +45,7 @@ class Brokers:
         return dict(topics)
     
     def checkifTopicPartExist(self,T,P):
+        self.refreshTopics()
         try:
             print(self.topics[T][P])
             return True
@@ -53,7 +59,7 @@ class Brokers:
         try:
             self.api.setbroker(bkr)
             res=self.api.add_topics(f"{T}x{P}")
-            self.topics=self.lisTopics()
+            self.refreshTopics()
             return res, 200
         except Exception as e:
             return str(e),400
@@ -93,6 +99,7 @@ class Brokers:
             return str(e),400
 
     def consumer_registration(self,T,P,subl):
+        self.refreshTopics()
         if P is None:
             if T not in self.topics:
                 return f"{T} does not exist, thus can not register as consumer", 400
