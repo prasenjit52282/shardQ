@@ -5,12 +5,23 @@ class Brokers:
     def __init__(self):
         self.api=ApiHandler()
         self.topics={}
+    
+    @property
+    def list(self):
+        res=requests.get("http://manager:5000/brokers")
+        return res.json()
+
+    @property
+    def curr_topics(self):
+        self.refreshTopics()
+        return self.topics
 
     def refreshTopics(self):
         res=requests.get("http://manager:5000/topics")
         self.topics=res.json()
 
     def checkifTopicPartExist(self,T,P):
+        self.refreshTopics()
         try:
             print(self.topics[T][P])
             return True

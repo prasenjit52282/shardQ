@@ -25,6 +25,7 @@ def add_broker(broker_name):
     if len(res)==0:
         return f"Unable to add {broker_name} - check manager logs", 400
     else:
+        brokers.refresh()
         return f"successfully added {broker_name}", 200
 
 @app.route("/brokers/rm/<broker_name>",methods=["GET"])
@@ -58,7 +59,7 @@ def test_broker(broker_name):
 #--------------------------------- Handling Topics -------------------------------#
 @app.route("/topics",methods=["GET"])
 def get_topics():
-    return jsonify(brokers.topics),200
+    return jsonify(brokers.curr_topics),200
 
 @app.route("/topics/add/<topic_name>/<part>",methods=["GET"])
 def add_topic(topic_name,part):

@@ -13,14 +13,12 @@ subl=Subscribers()
 #--------------------- Handling Brokers ----------------------------------#
 @app.route("/brokers",methods=["GET"])
 def list_brokers():
-    res=requests.get("http://manager:5000/brokers")
-    return res.json(), res.status_code
+    return jsonify(brokers.list), 200
 
 #--------------------------------- Handling Topics -------------------------------#
 @app.route("/topics",methods=["GET"])
 def get_topics():
-    res=requests.get("http://manager:5000/topics")
-    return res.json(), res.status_code
+    return jsonify(brokers.curr_topics),200
 
 #---------------------------------- Handling Subscribers ----------------------------#
 @app.route("/consumer/register",methods=["POST"])
