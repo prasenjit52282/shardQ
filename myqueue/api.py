@@ -1,12 +1,14 @@
 import requests
 
 class ApiHandler:
-    def __init__(self,url='localhost:5000'):
-        self.url='http://'+url
+    def __init__(self,host='localhost',primary='5000',readonly='5001'):
+        self.manager='http://'+host+':'+primary
+        self.manager2='http://'+host+':'+readonly
         
-    def raiseExceptionOnProhabitedTopic(self,topic):
-        if topic=='subl' or topic=='publ':
-            raise Exception(f"topic name: {topic} is not allowed")
+    #----------------- Error & Decode ----------------------#
+    def raiseExceptionOnProhabited(self,name):
+        if (name=='subl') or (name=='publ') or ('@' in name) or ('x' in name) or ('|' in name):
+            raise Exception(f"Name: {name} is not allowed")
         
     def raiseExceptionOnFailure(self,res):
         if res.status_code==400 or res.status_code==500:
@@ -14,54 +16,90 @@ class ApiHandler:
             
     def decodeResponse(self,res,field):
         return res.json()[field]
-        
-    def can_send(self):
-        res=requests.get(self.url+'/topics')
-        return True if res.status_code==200 else False
-    
-    def can_get_next(self,topic,consumer_id):
-        return True if self.get_size(topic,consumer_id)>0 else False
-        
-    def get_topics(self):
-        res=requests.get(self.url+'/topics')
-        self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'message')
-            
-    def add_topics(self,topic):
-        self.raiseExceptionOnProhabitedTopic(topic)
-        res=requests.post(self.url+'/topics',json={'topic_name':topic})
-        self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'message')
-            
-    def reg_consumer(self,topic):
-        res=requests.post(self.url+'/consumer/register',json={'topic':topic})
-        self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'consumer_id')
-        
-    def reg_producer(self,topic):
-        self.raiseExceptionOnProhabitedTopic(topic)
-        res=requests.post(self.url+'/producer/register',json={'topic':topic})
-        self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'producer_id')
-        
-    def produce(self,topic,producer_id,message):
-        res=requests.post(self.url+'/producer/produce',json={'topic':topic,'producer_id':producer_id,'message':message})
-        self.raiseExceptionOnFailure(res)
-    
-    def consume(self,topic,consumer_id):
-        res=requests.get(self.url+'/consumer/consume',params={'topic':topic,'consumer_id':consumer_id})
-        self.raiseExceptionOnFailure(res)
-        return Message(topic,self.decodeResponse(res,'message'))
-        
-    def get_size(self,topic,consumer_id):
-        res=requests.get(self.url+'/size',params={'topic':topic,'consumer_id':consumer_id})
-        self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'size')
 
-class Message:
-    def __init__(self,topic,msg):
-        self.message=msg
-        self.topic=topic
+    #------------------- Querry -------------------------------#  
+    def can_send(self):
+        return self.can_query_manager() and self.can_query_manager2()  
+        
+    def can_query_manager(self):
+        res=requests.get(self.manager+'/topics')
+        status= True if len(self.decodeResponse(res,"message"))>0 else False
+        return status
+
+    def can_query_manager2(self):
+        res=requests.get(self.manager2+'/topics')
+        status= True if len(self.decodeResponse(res,"message"))>0 else False
+        return status
     
-    def __repr__(self):
-        return f'<topic:{self.topic}, msg:{self.message}>'
+    def can_get_next(self,consumer_id):
+        return True if self.get_size(consumer_id)>0 else False
+        
+    #------------------- Manager -------------------------------#    
+    def add_topic(self,topic, part):
+        self.raiseExceptionOnProhabited(topic)
+        self.raiseExceptionOnProhabited(part)
+        res=requests.post(self.manager+'/topics/add',json={'topic':topic,'part':part})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+        
+    def reg_producer(self,topic,part=None):
+        data={'topic':topic} if part==None else {'topic':topic,'part':part}
+        self.raiseExceptionOnProhabited(topic)
+        if part!=None:self.raiseExceptionOnProhabited(part)
+        res=requests.post(self.manager+'/producer/register',json=data)
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+        
+    def produce(self,producer_id,message):
+        res=requests.post(self.manager+'/producer/produce',json={'producer_id':producer_id,'message':message})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+    
+    #------------------------ Manager2 --------------------------#
+    def get_topics(self):
+        res=requests.get(self.manager2+'/topics')
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    def reg_consumer(self,topic, part=None):
+        data={'topic':topic} if part==None else {'topic':topic,'part':part}
+        res=requests.post(self.manager2+'/consumer/register',json=data)
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    def consume(self,consumer_id):
+        res=requests.get(self.manager2+'/consumer/consume',params={'consumer_id':consumer_id})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+        
+    def get_size(self,consumer_id):
+        res=requests.get(self.manager2+'/size',params={'consumer_id':consumer_id})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    #------------------- Brokers -----------------------------#
+    def get_brokers(self):
+        res=requests.get(self.manager2+'/brokers')
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    def add_broker(self,broker_name):
+        self.raiseExceptionOnProhabited(broker_name)
+        if 'broker' not in broker_name: raise Exception(f"{broker_name} does not contain broker keyword")
+        res=requests.get(self.manager+'/brokers/add', params={'broker_name':broker_name})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    def rm_broker(self,broker_name):
+        self.raiseExceptionOnProhabited(broker_name)
+        if 'broker' not in broker_name: raise Exception(f"{broker_name} does not contain broker keyword")
+        res=requests.get(self.manager+'/brokers/rm', params={'broker_name':broker_name})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
+
+    def test_broker(self,broker_name):
+        self.raiseExceptionOnProhabited(broker_name)
+        if 'broker' not in broker_name: raise Exception(f"{broker_name} does not contain broker keyword")
+        res=requests.get(self.manager+'/brokers/test', params={'broker_name':broker_name})
+        self.raiseExceptionOnFailure(res)
+        return self.decodeResponse(res,'message')
