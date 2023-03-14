@@ -69,8 +69,11 @@ class ApiHandler:
 
     def consume(self,consumer_id):
         res=requests.get(self.manager2+'/consumer/consume',params={'consumer_id':consumer_id})
-        self.raiseExceptionOnFailure(res)
-        return Message(self.decodeResponse(res,'topic'),self.decodeResponse(res,'message'))
+        try:
+            self.raiseExceptionOnFailure(res)
+            return Message(self.decodeResponse(res,'topic'),self.decodeResponse(res,'message'))
+        except:
+            return None
         
     def get_size(self,consumer_id):
         res=requests.get(self.manager2+'/size',params={'consumer_id':consumer_id})

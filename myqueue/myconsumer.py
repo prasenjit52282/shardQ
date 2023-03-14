@@ -23,7 +23,10 @@ class MyConsumer:
         while True:
             for consumer_id in self.ids:
                 if self.api.can_get_next(consumer_id):
-                    yield self.api.consume(consumer_id)
+                    res=self.api.consume(consumer_id)
+                    if res==None:
+                        continue
+                    yield res
         
     def stop(self):
         os.kill(os.getpid(), 9)
