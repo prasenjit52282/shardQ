@@ -1,23 +1,159 @@
-Distributed Queue with Partitions and broker Manager
+# Prerequisites
 
-<!-- sudo docker run --name some-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=abc -d mysql:latest
-sudo docker system prune -a
-sudo docker build -f Dockerfile -t broker .
-sudo docker run --name broker -p 5000:5000 -d broker:latest
+### 1. Docker: latest [version 20.10.23, build 7155243]
 
-sudo docker run --name broker1 -e BID=broker1 -e PERSIST=yes -p 5000:5000 -d broker:latest
+    sudo apt-get update
 
-os.system('sudo docker run --name broker1 -e BID=broker1 -e PERSIST=yes -p 5000:5000 -d broker:latest')
-os.system('sudo docker stop broker2 && sudo docker rm broker2') -->
+    sudo apt-get install \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
 
-sudo docker run --name broker2 --network mynet --network-alias broker2 -e BID=broker2 -e PERSIST=yes  -d broker:latest
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-curl -XGET "http://localhost:5000/brokers/rm" 
-curl -XPOST "http://localhost:5000/add" -d '{"broker_name": "broker1"}' -H "Content-Type: application/json"
-curl -XPOST "http://localhost:5000/producer/register" -d '{"topic": "T3", "part": "P1"}' -H "Content-Type: application/json"
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-curl -XPOST "http://localhost:5000/producer/register" -d '{"topic": "T3"}' -H "Content-Type: application/json"
+    sudo apt-get update
 
-curl -XPOST "http://localhost:5000/producer/produce" -d '{"producer_id": "0", "message": "Hello"}' -H "Content-Type: application/json"
+    sudo apt-get install docker-ce docker-ce-cli containerd.io
 
-curl -XPOST "http://localhost:5000/consumer/register" -d '{"topic": "T3", "part": "P1"}' -H "Content-Type: application/json"
+### 2. Docker-compose standalone [version v2.15.1]
+    sudo curl -SL https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+    
+    sudo chmod +x /usr/local/bin/docker-compose
+    
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+
+# Installation Steps
+
+### Deploy broker-cluster 
+    persistent mode
+    └── make persist
+
+    inMemory mode
+    └── make inmem
+
+### Restart broker-cluster 
+    make restart
+
+### Remove broker-cluster
+    remove all & keep cache
+    └── make clean
+
+    remove all &remove cache
+    └── make prune
+
+
+# Testing
+Here 10.110.10.216 is used as an examle broker-cluster instance.
+
+### run a producer instance from log file
+    COMMAND
+    └──python runproduce.py --id 1 --topics T1:P1 T2:P2 T3:* --broker 10.110.10.216 --log_loc ./test/{EXP}
+
+** producer_{id}.txt log file format must be maintained else throws <strong>Exception("log file:incompitable")</strong>
+
+|ts|msg|parallel|topic|
+|---|---|---|---|
+|21:52:23|INFO|	*|T1|
+|21:52:23|INFO|	P2|T3|
+|21:52:23|INFO|	*|T1|
+|21:52:23|INFO|	P2|T3|
+|21:52:23|INFO|	*|T1|
+|21:52:23|INFO|	P2|T3|
+
+### run a consumer instance and store log
+    COMMAND
+    └──python runconsume.py --id 1 --topics T1:* T2:P1 --broker 10.110.10.216 --log_loc ./test/{EXP}
+
+** consumer_{id}.txt stored log file example 
+
+|topic:part|msg|
+|---|---|
+|T2:P1|DEBUG|
+|T3:P1|ERROR|
+|T1:P2|INFO|
+|T2:P2|ERROR|
+|T3:P2|INFO|
+### run API test cases
+    COMMAND
+    └──bash testAPI.sh 10.110.10.216
+
+Test results are as follows
+<p align="center">
+      <img src="images/testAPI.png" width="70%"/>
+</p>
+
+
+<p align="center">
+      <img src="images/2P2C.png" width="50%"/><br><strong>Fig.2: 2 Producers 2 Consumers</strong>
+</p>
+
+### run 2-producer, 2-consumer setup
+Question: Implement 2 Producers and 2 consumers with 2 topics as shown in Fig. 2 using the library developed in Part-C. Given below is the "topic:producers:consumers" mapping.
+
++ T1: P1 P2: C1 C2
++ T2: P1 P2: C1 C2
+
+Here, the last point means that P1 and P2 will produce to topic T2;  C1, C2 will consume from T2.
+
+    [Producers]
+    └──python runproduce.py --id 1 --topics T1:P1 T2:P1 T1:P2 T2:P2 --broker  10.110.10.216 --log_loc ./test/2P2C
+    └──python runproduce.py --id 2 --topics T1:* T2:* --broker  10.110.10.216 --log_loc ./test/2P2C
+
+    [Consumers]
+    └──python runconsume.py --id 1 --topics T1:P1 T2:P1 T1:P2 T2:P2 --broker  10.110.10.216 --log_loc ./test/2P2C
+    └──python runconsume.py --id 2 --topics T1:* T2:* --broker  10.110.10.216 --log_loc ./test/2P2C
+
+    Run all commands together
+    -------------------------
+    + bash test2P2C.sh 10.110.10.216
+
+Test results are as follows and Consumer logs are stored at <strong>./test/2P2C/consumer_{id}.txt</strong> where id = 1,2
+<p align="center">
+      <img src="images/test2P2C.png" width="90%"/>
+</p>
+
+
+<p align="center">
+      <img src="images/5P3C.png" width="50%"/><br><strong>Fig.3: 5 Producers 3 Consumers</strong>
+</p>
+
+### run 5-producer, 3-consumer setup
+Question: Implement 5 Producers and 3 consumers with 3 topics as shown in Fig. 3 using the library developed in Part-C. Given below is the "topic:producers:consumers" mapping.
+
++ T1: P1 P2 P3: C1 C2 C3
++ T2: P1 P4 P5: C1 
++ T3: P1 P2: C1 C2 C3
+
+Here, the last point means that P1 and P2 will produce to topic T3;  C1, C2 and C3 will consume from T3.
+
+    [Producers]
+    └──python runproduce.py --id 1 --topics T1:* T3:P2 --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runproduce.py --id 2 --topics T1:P2 T2:P1 --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runproduce.py --id 3 --topics T2:* --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runproduce.py --id 4 --topics T2:P2 --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runproduce.py --id 5 --topics T3:* --broker  10.110.10.216 --log_loc ./test/5P3C
+
+    [Consumers]
+    └──python runconsume.py --id 1 --topics T1:* T2:* T3:* --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runconsume.py --id 2 --topics T2:* T1:P1 --broker  10.110.10.216 --log_loc ./test/5P3C
+    └──python runconsume.py --id 3 --topics T3:* T1:P2 --broker  10.110.10.216 --log_loc ./test/5P3C
+
+    Run all commands together
+    -------------------------
+    + bash test5P3C.sh 10.110.10.216
+
+Test results are as follows and Consumer logs are stored at <strong>./test/5P3C/consumer_{id}.txt</strong> where id = 1,2,3
+<p align="center">
+      <img src="images/test5P3C.png" width="90%"/>
+</p>
+
+# Contact Me
+
+This is Assignment 2 of CS60002: Distributed Systems course in IIT Kharagpur, taught by [Dr. Sandip Chakraborty](https://cse.iitkgp.ac.in/~sandipc/). For questions and general feedback, contact [Prasenjit Karmakar](https://www.linkedin.com/in/prasenjit52282).

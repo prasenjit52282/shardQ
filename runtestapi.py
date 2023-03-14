@@ -58,7 +58,7 @@ def produce(id):
 
 def consume(id):
     res=myapi.consume(id)
-    print(res)
+    if res==None: raise Exception("Empty response consumed")
     assert res.message=="msg","Wrong msg Consumed"
     print("Pass: Consume")
 
@@ -106,7 +106,7 @@ run_test(get_topics,(t1,))
 run_test(reg_consumer,("T3", "P1"),shoulderr=True)             #AsExpected: Topic:T3:P1 does not exist
 cid=run_test(reg_consumer,(t1,p1))
 run_test(get_size,(cid,0))
-run_test(consume,(cid,),shoulderr=True)                        #AsExpected: Empty logs for Comsumer:{} for {cid}
+run_test(consume,(cid,),shoulderr=True)                        #AsExpected: Empty logs for Comsumer:{} for {cid} thus empty response
 
 
 pid=run_test(reg_producer,(t1,None))

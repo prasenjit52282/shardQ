@@ -1,10 +1,10 @@
-T1:P2     MSG6
-T1:P1     MSG1
+T1:P1     MSG6
 T2:P1     MSG7
 T1:P2     MSG3
 T2:P2     MSG4
-T1:P1     MSG8
+T1:P1     MSG1
 T2:P1     MSG2
-T1:P2     MSG10
+T1:P2     MSG8
 T2:P2     MSG9
+T1:P1     MSG10
 T1:P1     MSG5
