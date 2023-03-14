@@ -3,15 +3,16 @@ from .api import ApiHandler
 from iterators import TimeoutIterator
 
 class MyConsumer:
-    def __init__(self,topics,broker,timeout=5):
+    def __init__(self,topics,host,timeout=20):
         self.timeout=timeout
-        self.api=ApiHandler(broker)
+        self.api=ApiHandler(host)
         self._setup(topics)
         
     def _setup(self,topics):
-        self.topics_to_id={}
-        for t in topics:
-            self.topics_to_id[t]=self.api.reg_consumer(t)
+        self.ids=[]
+        for tp in topics:
+            t=tp[0];p=None if tp[1]=='*' else tp[1]
+            self.ids.append(self.api.reg_consumer(t,p))
     
     def get_next(self):
         for m in TimeoutIterator(self.consume(),timeout=self.timeout,sentinel=None):
@@ -20,9 +21,9 @@ class MyConsumer:
     
     def consume(self):
         while True:
-            for topic,consumer_id in self.topics_to_id.items():
-                if self.api.can_get_next(topic,consumer_id):
-                    yield self.api.consume(topic,consumer_id)
+            for consumer_id in self.ids:
+                if self.api.can_get_next(consumer_id):
+                    yield self.api.consume(consumer_id)
         
     def stop(self):
         os.kill(os.getpid(), 9)
