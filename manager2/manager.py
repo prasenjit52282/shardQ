@@ -37,7 +37,7 @@ def handle_consume():
     bkr=nhop_sub_id.split('@')[0]
     msg,status_code=brokers.consume(bkr,TxP,nhop_sub_id)
     mode='success' if status_code==200 else 'failure'
-    return Response(status_code, message=msg, status=mode)
+    return Response(status_code, message=msg, topic=TxP.replace('x',':'), status=mode)
 
 #------------------------------------ Size -------------------------------------------#
 @app.route("/size",methods=["GET"])

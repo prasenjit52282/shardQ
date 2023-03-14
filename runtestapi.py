@@ -58,7 +58,8 @@ def produce(id):
 
 def consume(id):
     res=myapi.consume(id)
-    assert res=="msg","Wrong msg Consumed"
+    print(res)
+    assert res.message=="msg","Wrong msg Consumed"
     print("Pass: Consume")
 
 def get_size(id,should_be):

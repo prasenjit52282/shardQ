@@ -70,7 +70,7 @@ class ApiHandler:
     def consume(self,consumer_id):
         res=requests.get(self.manager2+'/consumer/consume',params={'consumer_id':consumer_id})
         self.raiseExceptionOnFailure(res)
-        return self.decodeResponse(res,'message')
+        return Message(self.decodeResponse(res,'topic'),self.decodeResponse(res,'message'))
         
     def get_size(self,consumer_id):
         res=requests.get(self.manager2+'/size',params={'consumer_id':consumer_id})
@@ -103,3 +103,11 @@ class ApiHandler:
         res=requests.get(self.manager+'/brokers/test', params={'broker_name':broker_name})
         self.raiseExceptionOnFailure(res)
         return self.decodeResponse(res,'message')
+
+class Message:
+    def __init__(self,topic,msg):
+        self.message=msg
+        self.topic=topic
+    
+    def __repr__(self):
+        return f'<topic:{self.topic}, msg:{self.message}>'
