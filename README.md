@@ -95,12 +95,14 @@ Test results are as follows
 </p>
 
 ### run 2-producer, 2-consumer setup
-Question: Implement 2 Producers and 2 consumers with 2 topics as shown in Fig. 2 using the library developed in Part-C. Given below is the "topic:producers:consumers" mapping.
+Question: Implement 2 Producers and 2 consumers with 2 topics T1 & T2 each having partitions as shown in Fig. 2 using the library developed. Given below is the "topic (partition):producers:consumers" mapping.
 
-+ T1: P1 P2: C1 C2
-+ T2: P1 P2: C1 C2
++ T1(P1): Producer1 Producer2: Consumer1 Consumer2
++ T1(P2): Producer1 Producer2: Consumer1 Consumer2
++ T2(P1): Producer1 Producer2: Consumer1 Consumer2
++ T2(P2): Producer1 Producer2: Consumer1 Consumer2
 
-Here, the last point means that P1 and P2 will produce to topic T2;  C1, C2 will consume from T2.
+Here, the last point means that Producer1 and Producer2 will produce to topic T2 partition P2;  Consumer1, Consumer2 will consume from T2 partition P2.
 
     [Producers]
     └──python runproduce.py --id 1 --topics T1:P1 T2:P1 T1:P2 T2:P2 --broker  10.110.10.216 --log_loc ./test/2P2C
@@ -125,13 +127,18 @@ Test results are as follows and Consumer logs are stored at <strong>./test/2P2C/
 </p>
 
 ### run 5-producer, 3-consumer setup
-Question: Implement 5 Producers and 3 consumers with 3 topics as shown in Fig. 3 using the library developed in Part-C. Given below is the "topic:producers:consumers" mapping.
+Question: Implement 5 Producers and 3 consumers with 3 topics T1, T2 & T3 each having partitions as shown in Fig. 3 using the library developed. Given below is the "topic (partition):producers:consumers" mapping.
 
-+ T1: P1 P2 P3: C1 C2 C3
-+ T2: P1 P4 P5: C1 
-+ T3: P1 P2: C1 C2 C3
++ T1(P1): Producer1: Consumer1 Consumer2
++ T1(P2): Producer1 Producer2: Consumer1 Consumer3
++ T2(P1): Producer2 Producer3: Consumer1 Consumer3 
++ T2(P2): Producer3 Producer4: Consumer1 Consumer2 
++ T3(P1): Producer5: Consumer1 Consumer3
++ T3(P2): Producer1 Producer5: Consumer1 Consumer3
++ T3(P3): Producer5: Consumer1 Consumer3
 
-Here, the last point means that P1 and P2 will produce to topic T3;  C1, C2 and C3 will consume from T3.
+
+Here, the last point means that Producer5 will produce to topic T3 partition P3;  Consumer1, Consumer3 will consume from T3 partition P3.
 
     [Producers]
     └──python runproduce.py --id 1 --topics T1:* T3:P2 --broker  10.110.10.216 --log_loc ./test/5P3C
