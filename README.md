@@ -1,3 +1,45 @@
+# Distributed Queue with sharding
+<p align="center">
+      <img src="images/broker.png" width="90%"/><br><strong>Fig.1: Overview</strong>
+</p>
+
+# Design
+
+The repository implements a distributed logging queue with sharding in Python programming language and provides HTTP endpoints to interact with it over the network. It uses the Flask library to register the endpoints and further uses a Manager object to interact with the broker-cluster to access the distributed storage. The storage layer tracks tables for all topics and their shards (partitions) along with subscribers (consumer) and publishers (producer) that are using the Manager to pass messages to some broker in the cluster under a specific topic. The table schemas are shown in Fig.1.
+
+The Manager object has two replicas:
+<ol type="i">
+ <li><strong>Primary</strong> Manager is responsible to perform any amendments in the broker-cluster such as adding new or removing old brokers, creating topics and allow Producers to register and publish messages to any topic or specific shard of a topic.</li>
+ <li><strong>Read-only</strong> Manager is taking care of all read calls to the broker-cluster such as list of live-brokers, list of topics and their shard’s location. Moreover it allows Consumers to register to any topic or specific shard of the topic and consume messages. Note that, read-only manager query the primary manager to synchronise with the cluster configuration.</li>
+</ol>
+
+On top of the Managers and the distributed broker-cluster, a python library “myqueue” is implemented that provides the MyProducer, MyConsumer classes to easily create respective instances. Moreover an ApiHandler is also implemented to interact with the Managers from the python environment. The producer and consumer instances can concurrently send or receive data from the broker. The brokers order the requests and accordingly store the messages in the storage layer using locking primitives like Semaphore and ThreadPool.
+
+
+# Assumptions
+
++ Topics should not have “–”, “@”, “x”, “|”, “:” in their name (i.e., T–1 is not allowed, T1 is allowed) as they are being used internally by the managers and brokers to store combined representation of subscriptions.
++ “subl” and “publ” names are reserved for the broker's internal use. Hence usage of these two for topic names is prohibited.
++ The log files are of specified format to work with the “myqueue” implementation. This is discussed in detail in the testing phase.
++ Producer and Consumer IDs start from 0 to N for each type of instance. For instance the first producer will have ID as 0 and first consumer will also have ID as 0; however these two are used in different contexts and are not the same.
++ Consumers start consuming messages when they subscribe to a topic. Please note previous messages are not accessible for the consumer instance.
++ Internal ordering of the messages is based on FIFS policy. Hence whichever request comes first, is served first. Unless it is parallelizable (i.e., read calls).
++ When adding a new broker to the broker-cluster, the broker name must contain the keyword “broker” (e.g., broker0) to distinguish it inside the docker network.
++ Shards/ Partitions are assigned to the brokers with a random-policy, thus it ensures probabilistic equal contribution in terms of storage from each broker.
++ Providing only Topic and not which shard/partition to register results in round-robin access to all the partitions of the topic.
++ Need to wait for sometime(i.e., 20 secs) to let a newly added broker initialize and start functioning in the broker-cluster.
+
+
+
+# Challenges
+
++ Designing the schemas for the tables was a bit challenging. Especially how to design them so that it takes minimum space and it will be easy from the broker’s perspective to interact with the storage-layer.
++ MySQL database supports sequential query processing. Therefore, the concurrent requests from the producer and consumer objects poses a great issue. This leads to multiple failed attempts to test the persistent version of the broker. Eventually, the implementation synchronous Process Pool of size 1 to make the SQL queries sequential.
++ However, the above design choice may increase the latency for each request to be served.
++ Finding a way to spawn new docker containers (brokers in the cluster) in the host computer from another privileged container (Primary Manager) was bit hectic
++ Testing the implementation from every aspect was challenging and helped fixing some major bugs in the "myqueue" python library.
+
+
 # Prerequisites
 
 ### 1. Docker: latest [version 20.10.23, build 7155243]
@@ -45,7 +87,7 @@
     remove all & keep cache
     └── make clean
 
-    remove all &remove cache
+    remove all & remove cache
     └── make prune
 
 
