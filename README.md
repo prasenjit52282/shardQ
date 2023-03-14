@@ -205,4 +205,4 @@ Test results are as follows and Consumer logs are stored at <strong>./test/5P3C/
 
 # Contact Me
 
-This is Assignment 2 of CS60002: Distributed Systems course in IIT Kharagpur, taught by [Dr. Sandip Chakraborty](https://cse.iitkgp.ac.in/~sandipc/). For questions and general feedback, contact [Prasenjit Karmakar](https://www.linkedin.com/in/prasenjit52282).
+This is Assignment 2 of CS60002: Distributed Systems course in IIT Kharagpur, taught by [Dr. Sandip Chakraborty](https://cse.iitkgp.ac.in/~sandipc/). For questions and general feedback, contact [Prasenjit Karmakar](https://www.linkedin.com/in/prasenjit52282). [Assignment 1](https://github.com/prasenjit52282/distributedQ) was on implementing a centralized broker and was much simpler to understand for me.
