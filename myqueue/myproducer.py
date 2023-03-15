@@ -14,7 +14,7 @@ class MyProducer:
         self.ids=defaultdict(lambda:{})
         for t,p in topics:
             part=None if p=='*' else p
-            self.ids[t][p]=self.api.reg_producer(t,part)
+            self.ids[t][p]=self.api.reg_producer(t,part,retry=True)
             
     def can_send(self):
         return self.api.can_send()

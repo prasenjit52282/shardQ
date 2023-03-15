@@ -52,7 +52,7 @@ class ApiHandler:
         self.raiseExceptionOnFailure(res)
         return self.decodeResponse(res,'message')
         
-    def reg_producer(self,topic,part=None):
+    def reg_producer(self,topic,part=None,retry=False):
         data={'topic':topic} if part==None else {'topic':topic,'part':part}
         self.raiseExceptionOnProhabited(topic)
         if part!=None:self.raiseExceptionOnProhabited(part)
@@ -63,6 +63,7 @@ class ApiHandler:
                 break
             except:
                 time.sleep(1)
+            if not retry: break
         return self.decodeResponse(res,'message')
         
     def produce(self,producer_id,message):
@@ -76,7 +77,7 @@ class ApiHandler:
         self.raiseExceptionOnFailure(res)
         return self.decodeResponse(res,'message')
 
-    def reg_consumer(self,topic, part=None):
+    def reg_consumer(self,topic, part=None,retry=False):
         data={'topic':topic} if part==None else {'topic':topic,'part':part}
         while True:
             try:
@@ -85,6 +86,7 @@ class ApiHandler:
                 break
             except:
                 time.sleep(1)
+            if not retry: break
         return self.decodeResponse(res,'message')
 
     def consume(self,consumer_id):
