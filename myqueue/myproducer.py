@@ -1,9 +1,11 @@
+import time
 from .api import ApiHandler
 from collections import defaultdict
 from .task import TaskManager, Task
 
 class MyProducer:
-    def __init__(self,topics,host):
+    def __init__(self,topics,host,timeout=20):
+        self.timeout=timeout
         self.api=ApiHandler(host)
         self.tsk_mgr=TaskManager()
         self._setup(topics)
@@ -16,9 +18,20 @@ class MyProducer:
             
     def can_send(self):
         return self.api.can_send()
+
+    def try_produce_until_timeout(self,producer_id,message):
+        t=0
+        while t<self.timeout:
+            try:
+                self.api.produce(producer_id,message)
+                return
+            except:
+                t+=1
+                time.sleep(1)
+
     
     def send(self,topic,part,msg):
-        Task(self.api.produce,(self.ids[topic][part],msg),self.tsk_mgr).start()
+        Task(self.try_produce_until_timeout,(self.ids[topic][part],msg),self.tsk_mgr).start()
         
     def stop(self):
         self.tsk_mgr.wait()
