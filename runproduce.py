@@ -18,7 +18,7 @@ def produce(pid=1,topics=[['T1', 'P1'], ['T2','*']],host='localhost',log_loc='./
         host=host)
     try:
         log_gen=readProduceLog(f'{log_loc}/producer_{pid}.txt')
-        while producer.can_send():
+        while True:
             for t,p in topics:
                 topic,part,msg=next(log_gen)
                 if p=='*':

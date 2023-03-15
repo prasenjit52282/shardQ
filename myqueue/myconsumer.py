@@ -12,7 +12,7 @@ class MyConsumer:
         self.ids=[]
         for tp in topics:
             t=tp[0];p=None if tp[1]=='*' else tp[1]
-            self.ids.append(self.api.reg_consumer(t,p))
+            self.ids.append(self.api.reg_consumer(t,p,retry=True))
     
     def get_next(self):
         for m in TimeoutIterator(self.consume(),timeout=self.timeout,sentinel=None):
