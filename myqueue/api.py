@@ -1,3 +1,4 @@
+import time
 import requests
 
 class ApiHandler:
@@ -22,17 +23,26 @@ class ApiHandler:
         return self.can_query_manager() and self.can_query_manager2()  
         
     def can_query_manager(self):
-        res=requests.get(self.manager+'/topics')
-        status= True if len(self.decodeResponse(res,"message"))>0 else False
+        try:
+            res=requests.get(self.manager+'/topics')
+            status= True if len(self.decodeResponse(res,"message"))>0 else False
+        except:
+            status=False
         return status
 
     def can_query_manager2(self):
-        res=requests.get(self.manager2+'/topics')
-        status= True if len(self.decodeResponse(res,"message"))>0 else False
+        try:
+            res=requests.get(self.manager2+'/topics')
+            status= True if len(self.decodeResponse(res,"message"))>0 else False
+        except:
+            status=False
         return status
     
     def can_get_next(self,consumer_id):
-        return True if self.get_size(consumer_id)>0 else False
+        try:
+            return True if self.get_size(consumer_id)>0 else False
+        except:
+            return False
         
     #------------------- Manager -------------------------------#    
     def add_topic(self,topic, part):
@@ -46,8 +56,13 @@ class ApiHandler:
         data={'topic':topic} if part==None else {'topic':topic,'part':part}
         self.raiseExceptionOnProhabited(topic)
         if part!=None:self.raiseExceptionOnProhabited(part)
-        res=requests.post(self.manager+'/producer/register',json=data)
-        self.raiseExceptionOnFailure(res)
+        while True:
+            try:
+                res=requests.post(self.manager+'/producer/register',json=data)
+                self.raiseExceptionOnFailure(res)
+                break
+            except:
+                time.sleep(1)
         return self.decodeResponse(res,'message')
         
     def produce(self,producer_id,message):
@@ -63,13 +78,18 @@ class ApiHandler:
 
     def reg_consumer(self,topic, part=None):
         data={'topic':topic} if part==None else {'topic':topic,'part':part}
-        res=requests.post(self.manager2+'/consumer/register',json=data)
-        self.raiseExceptionOnFailure(res)
+        while True:
+            try:
+                res=requests.post(self.manager2+'/consumer/register',json=data)
+                self.raiseExceptionOnFailure(res)
+                break
+            except:
+                time.sleep(1)
         return self.decodeResponse(res,'message')
 
     def consume(self,consumer_id):
-        res=requests.get(self.manager2+'/consumer/consume',params={'consumer_id':consumer_id})
         try:
+            res=requests.get(self.manager2+'/consumer/consume',params={'consumer_id':consumer_id})
             self.raiseExceptionOnFailure(res)
             return Message(self.decodeResponse(res,'topic'),self.decodeResponse(res,'message'))
         except:
